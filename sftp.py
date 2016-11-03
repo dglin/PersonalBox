@@ -2,25 +2,23 @@ import paramiko
 from ctypes import c_char_p
 
 
-def sftp(c_storage,client_details,server_details,download_paths,upload_paths):
+def sftp(serverAddress, serverPath, localPath, username, password, sftp_list):
     try:
-        host = server_details.host
+        host = serverAddress
         port = 22
         transport = paramiko.Transport((host, port))
 
-        password = server_details.password
-        username = server_details.user
+        password = password
+        username = username
         transport.connect(username = username, password = password)
 
         sftp = paramiko.SFTPClient.from_transport(transport)
-        localpath = client_details.localpath
-        for path in download_paths:
-            sftp.get(localpath, path)
-        for path in upload_paths:
-            sftp.put(localpath, path)
+        for path in sftp_list:
+            print localPath + path
+            sftp.put(localPath + path, serverPath)
 
         sftp.close()
         transport.close()
-        c_storage.value = "Success"
-    except:
-        c_storage.value = "Failed"
+        return "Success"
+    except Exception as e:
+        return e

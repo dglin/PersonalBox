@@ -4,33 +4,18 @@ from AppKit import *
 from multiprocessing import *
 from ctypes import c_char_p
 from PyObjCTools import NibClassBuilder, AppHelper
-import time
-# Local files
-import sftp
-
+from sftp import sftp
+from directory import initialize
 
 # Global read only
 start_time = NSDate.date()
 icon_status = {
-	 'idle':'icons/StatusBarButtonImage@2x.png',
-	 'active_0':'icons/menubar_busy_2@2x.png', 
-	 'active_1':'icons/menubar_busy_3@2x.png',
-	 'active_2':'icons/menubar_busy_4@2x.png',
-	 'active_3':'icons/menubar_busy_5@2x.png',
-	 'active_4':'icons/menubar_busy_6@2x.png',
-	 'active_5':'icons/menubar_busy_7@2x.png',
-	 'active_6':'icons/menubar_busy_8@2x.png',
-	 'active_7':'icons/menubar_busy_9@2x.png',
-	 'active_8':'icons/menubar_busy_10@2x.png',
-	 'active_9':'icons/menubar_busy_11@2x.png',
-	 'active_10':'icons/menubar_busy_12@2x.png',
-	 'active_11':'icons/menubar_busy_13@2x.png',
-	 'complete':'icons/menubar_complete@2x.png'
+	 'idle':'icons/StatusItem@2x.png',
+	 'active':'icons/menubar_busy_2@2x.png',
+	 'success':'icons/menubar_complete@2x.png',
+	 'failure':'icons/StatusBarButtonImage@2x.png'
 }
-
-def sftp_(c_storage):
-	c_storage.value = "Success"
-
+#LALAALAL
 class App(NSObject):
 	icons = {}
 	statusbar = None
@@ -54,34 +39,18 @@ class App(NSObject):
 		self.menu.addItem_(item)
 		self.statusitem.setMenu_(self.menu)
 
+	def set_Active(self):
+		self.current_state = 'active'
+		self.statusitem.setImage_(self.icons[self.current_state])
 
 	def sync_(self, notification):
-		# Start timer
-		self.timer = NSTimer.alloc().initWithFireDate_interval_target_selector_userInfo_repeats_(start_time, 0.1, self, 'tick:', None, True)
-		loop = NSRunLoop.currentRunLoop().addTimer_forMode_(self.timer, NSDefaultRunLoopMode)
-		self.timer.fire()
+		self.set_Active()
+		serverAddress, serverPath, localPath, username, password, sftp_list = initialize()
+		print serverPath, localPath, username, password, sftp_list
+		status = sftp(serverAddress, serverPath, localPath, username, password, sftp_list)
+		print status
 
-		manager = Manager()
-		status = manager.Value(c_char_p, "Placeholder")
-		p = Process(target=sftp_, args=(status,))
-		p.start()
-		p.join()
-		
-		print 'Hello' + status.value
-		if status.value == "Success":
-			print 'David'
-			self.icon_iteration = 0
-			self.current_state = 'idle'
-			self.statusitem.setImage_(self.icons[self.current_state])
-			self.timer = None
-			print 'Trying to stop'
 
-	def tick_(self, notification):
-		self.current_state = 'active_' + str(self.icon_iteration)
-		self.statusitem.setImage_(self.icons[self.current_state])
-		self.icon_iteration += 1
-		if self.icon_iteration == 11:
-			self.icon_iteration = 0
 
 if __name__ == "__main__":
 	app = NSApplication.sharedApplication()
